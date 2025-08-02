@@ -51,14 +51,14 @@ interface Comment {
   likes: number;
 }
 
-const EventDetailPage = ({ params }: { params: { id: string } }) => {
+const EventDetailPage = () => {
   const [liked, setLiked] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [showShareMenu, setShowShareMenu] = useState(false);
 
   // Mock event data
   const event: EventDetail = {
-    id: params.id,
+    id: "1",
     title: "SỰ KIỆN HÈ 2024 - VÌ VŨ BÁI BIẾN",
     description:
       "Tham gia giải đấu võ thuật lớn nhất năm để tranh tài và nhận những phần thưởng cực khủng!",
