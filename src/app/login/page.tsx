@@ -1,8 +1,8 @@
 "use client";
 
 import type React from "react";
-
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/UI/Button";
 import { Input } from "@/components/UI/Input";
@@ -16,25 +16,71 @@ import {
 } from "@/components/UI/Card";
 import { Eye, EyeOff, User, Lock } from "lucide-react";
 
+type FormState = {
+  username: string;
+  password: string;
+};
+
 export default function LoginPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormState>({
     username: "",
     password: "",
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle login logic here
-    console.log("Login data:", formData);
-    alert("Đăng nhập thành công!");
+    setError(null);
+
+    if (!formData.username || !formData.password) {
+      setError("Vui lòng điền đầy đủ tên đăng nhập và mật khẩu.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: formData.username, // nếu backend dùng field email
+          password: formData.password,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        // hiển thị lỗi từ backend
+        setError(data.error || "Đăng nhập thất bại.");
+        return;
+      }
+
+      // thành công: chuyển hướng (ví dụ về dashboard)
+      router.push("/");
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("Không thể kết nối tới server.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="relative min-h-screen bg-slate-50 flex flex-col items-center justify-center">
       <div className="absolute p-10 flex justify-between items-center top-0 w-full h-24 bg-gradient-to-r from-orange-400 to-orange-300">
         <Link href="/">
-          <img className="m-3 ml-5" width={150} src="/LOGOdragon.png" alt="" />
+          <img
+            className="m-3 ml-5"
+            width={150}
+            src="/LOGOdragon.png"
+            alt="Logo"
+          />
         </Link>
         <CardTitle className="text-2xl font-bold text-white bg-clip-text">
           ĐĂNG NHẬP
@@ -51,6 +97,12 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="text-sm text-red-600 bg-red-100 p-2 rounded">
+                {error}
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label
                 htmlFor="username"
@@ -72,6 +124,7 @@ export default function LoginPage() {
                     }))
                   }
                   className="pl-10"
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -97,11 +150,14 @@ export default function LoginPage() {
                     }))
                   }
                   className="pl-10 pr-10"
+                  disabled={loading}
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
+                  onClick={() => setShowPassword((v) => !v)}
                   className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                  aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                  disabled={loading}
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -123,9 +179,10 @@ export default function LoginPage() {
 
             <Button
               type="submit"
-              className="w-full bg-gradient-to-r from-orange-400 to-orange-300 text-white font-semibold py-2 px-4 rounded-md transition-all duration-300 transform hover:scale-105"
+              className="w-full bg-gradient-to-r from-orange-400 to-orange-300 text-white font-semibold py-2 px-4 rounded-md transition-all duration-300 transform hover:scale-105 flex justify-center items-center"
+              disabled={loading}
             >
-              Đăng Nhập
+              {loading ? "Đang đăng nhập..." : "Đăng Nhập"}
             </Button>
 
             <div className="text-center text-sm text-gray-600">
